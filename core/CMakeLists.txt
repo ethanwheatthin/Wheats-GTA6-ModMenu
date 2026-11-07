@@ -1,0 +1,3 @@
+add_library(modmenu_core INTERFACE)
+target_include_directories(modmenu_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(modmenu_core INTERFACE cxx_std_20)
