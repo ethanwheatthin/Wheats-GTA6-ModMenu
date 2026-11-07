@@ -1,0 +1,45 @@
+# Build outputs
+/build/
+/out/
+/bin/
+/cmake-build-*/
+*.obj
+*.ilk
+*.pdb
+*.exp
+*.lib
+*.exe
+*.dll
+*.asi
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.sln.docstates
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# ScriptHookV / third-party SDKs (never committed; path supplied via SHV_SDK_DIR)
+/sdk/
+/third_party/ScriptHookV*/
+*.sdk/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.idea/
+*.user
+Thumbs.db
+.DS_Store
+
+# Python (pre-commit, tooling venvs)
+__pycache__/
+.venv/
