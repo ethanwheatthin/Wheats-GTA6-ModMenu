@@ -1,0 +1,60 @@
+name: Agent ticket
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: agent-ticket-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.event.label.name == 'agent:ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Mark working
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh issue edit ${{ github.event.issue.number }} --remove-label "agent:ready" --add-label "agent:working"
+
+      - name: Move card to In Progress
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ github.event.issue.number }} "In Progress"
+        continue-on-error: true
+
+      - name: Run agent
+        uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          max_turns: "60"
+          prompt: |
+            Follow .claude/commands/pick-ticket.md for issue
+            #${{ github.event.issue.number }}.
+
+      # Card move to "In Review" happens via board-sync.yml when the PR the
+      # agent opens above triggers pull_request.opened.
+
+      - name: On failure, label blocked and comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} --remove-label "agent:working" --add-label "agent:blocked"
+          gh issue comment ${{ github.event.issue.number }} --body "Agent run failed or timed out. See: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: On failure, move card back to Ready
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ github.event.issue.number }} "Ready"
+        continue-on-error: true

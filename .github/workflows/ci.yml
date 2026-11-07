@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+
+      - name: Install toolchain (cmake/ninja/clang-format/clang-tidy)
+        run: pip install cmake ninja clang-format clang-tidy
+
+      - name: Cache CMake FetchContent dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: build/ci/_deps
+          key: ${{ runner.os }}-fetchcontent-${{ hashFiles('tests/CMakeLists.txt') }}
+
+      - name: Configure (ci preset)
+        run: cmake --preset ci
+
+      - name: Lint - clang-format
+        shell: bash
+        run: |
+          files=$(git ls-files '*.cpp' '*.hpp' '*.cc' '*.h')
+          [ -z "$files" ] || clang-format --dry-run --Werror $files
+
+      - name: Lint - clang-tidy
+        shell: bash
+        run: |
+          files=$(git ls-files '*.cpp' '*.hpp' '*.cc' '*.h')
+          [ -z "$files" ] || clang-tidy -p build/ci $files
+
+      - name: Typecheck + build (core + mock adapter only - no SDK in CI)
+        run: cmake --build --preset ci
+
+      - name: Test
+        run: ctest --preset ci

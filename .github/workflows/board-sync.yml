@@ -1,0 +1,55 @@
+name: Board sync
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened, closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  issue-opened:
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ github.event.issue.number }} "Backlog"
+
+  pr-event:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Extract linked issue number
+        id: linked
+        shell: bash
+        run: |
+          issue=$(printf '%s' "${{ github.event.pull_request.body }}" \
+            | grep -oiE '(close[sd]?|fixe?[sd]?|resolve[sd]?) #[0-9]+' \
+            | grep -oE '[0-9]+' | head -n1 || true)
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+      - name: PR opened -> In Review
+        if: github.event.action == 'opened' && steps.linked.outputs.issue != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ steps.linked.outputs.issue }} "In Review"
+
+      - name: PR merged -> Done
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true && steps.linked.outputs.issue != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ steps.linked.outputs.issue }} "Done"
+
+      - name: PR closed unmerged -> Ready
+        if: github.event.action == 'closed' && github.event.pull_request.merged == false && steps.linked.outputs.issue != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: bash scripts/project-status.sh ${{ steps.linked.outputs.issue }} "Ready"
