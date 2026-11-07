@@ -1,0 +1,35 @@
+name: Feature
+description: A new feature or capability
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should exist when this is done, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Checklist. Each item should be independently verifiable.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: What this ticket explicitly does not cover.
+    validations:
+      required: false
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: Technical Notes
+      description: Relevant GameAdapter capability, feature spec ID, files, constraints.
+    validations:
+      required: false
