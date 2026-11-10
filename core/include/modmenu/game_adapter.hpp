@@ -47,7 +47,10 @@ class GameAdapter {
   virtual std::optional<Vector3> get_player_position() const = 0;
 
   // --- Spawning ----------------------------------------------------
+  // Returned handles are opaque, never kInvalidHandle, and unique among live
+  // entities. Callers must not assume any particular value or width semantics.
   virtual std::optional<EntityHandle> spawn(const SpawnRequest& request) = 0;
+  // Returns false for kInvalidHandle or a handle that is not live.
   virtual bool delete_entity(EntityHandle handle) = 0;
 
   // --- Teleport ----------------------------------------------------
@@ -55,6 +58,8 @@ class GameAdapter {
 
   // --- Weather / time ------------------------------------------------
   virtual bool set_weather(const std::string& weather_name) = 0;
+  // Returns false (and changes nothing) if hour is outside 0-23 or minute is
+  // outside 0-59, or if the game cannot set the time.
   virtual bool set_time_of_day(int hour, int minute) = 0;
 
   // --- Weapons ----------------------------------------------------

@@ -38,6 +38,9 @@ class MockGameAdapter final : public GameAdapter {
   const std::string& weather() const { return weather_; }
 
   bool set_time_of_day(int hour, int minute) override {
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return false;
+    }
     hour_ = hour;
     minute_ = minute;
     return true;
